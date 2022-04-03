@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 
 
 from src.mappings import ColorMapper
+from src.utils import Proxies
 
 
 class PlaceClient:
@@ -31,25 +32,21 @@ class PlaceClient:
         # In seconds
         self.delay_between_launches = (
             self.json_data["thread_delay"]
-            if "thread_delay" in self.json_data
-            and self.json_data["thread_delay"] is not None
+            if "thread_delay" in self.json_data and
+            self.json_data["thread_delay"] is not None
             else 3
         )
         self.unverified_place_frequency = (
             self.json_data["unverified_place_frequency"]
-            if "unverified_place_frequency" in self.json_data
-            and self.json_data["unverified_place_frequency"] is not None
+            if "unverified_place_frequency" in self.json_data and
+            self.json_data["unverified_place_frequency"] is not None
             else False
         )
-        self.proxies = (
-            self.GetProxies(self.json_data["proxies"])
-            if "proxies" in self.json_data and self.json_data["proxies"] is not None
-            else None
-        )
+        self.proxies = Proxies(self.json_data.get("proxies", []))
         self.compactlogging = (
             self.json_data["compact_logging"]
-            if "compact_logging" in self.json_data
-            and self.json_data["compact_logging"] is not None
+            if "compact_logging" in self.json_data and
+            self.json_data["compact_logging"] is not None
             else True
         )
 
@@ -76,18 +73,6 @@ class PlaceClient:
         self.waiting_thread_index = -1
 
     """ Utils """
-
-    def GetProxies(self, proxies):
-        proxieslist = []
-        for i in proxies:
-            proxieslist.append({"https": i})
-        return proxieslist
-
-    def GetRandomProxy(self):
-        randomproxy = None
-        if self.proxies is not None:
-            randomproxy = self.proxies[random.randint(0, len(self.proxies) - 1)]
-        return randomproxy
 
     def get_json_data(self, config_path):
         configFilePath = os.path.join(os.getcwd(), config_path)
@@ -166,7 +151,7 @@ class PlaceClient:
         }
 
         response = requests.request(
-            "POST", url, headers=headers, data=payload, proxies=self.GetRandomProxy()
+            "POST", url, headers=headers, data=payload, proxies=self.proxies.random()
         )
         logger.debug("Thread #{} : Received response: {}", thread_index, response.text)
 
@@ -466,15 +451,14 @@ class PlaceClient:
 
                 # refresh access token if necessary
                 if (
-                    len(self.access_tokens) == 0
-                    or len(self.access_token_expires_at_timestamp) == 0
-                    or
+                    len(self.access_tokens) == 0 or
+                    len(self.access_token_expires_at_timestamp) == 0 or
                     # index in self.access_tokens
-                    index not in self.access_token_expires_at_timestamp
-                    or (
+                    index not in self.access_token_expires_at_timestamp or
+                    (
+                        self.access_token_expires_at_timestamp.get(index) and
+                        current_timestamp >=
                         self.access_token_expires_at_timestamp.get(index)
-                        and current_timestamp
-                        >= self.access_token_expires_at_timestamp.get(index)
                     )
                 ):
                     if not self.compactlogging:
@@ -513,7 +497,7 @@ class PlaceClient:
                     r = client.post(
                         "https://www.reddit.com/login",
                         data=data,
-                        proxies=self.GetRandomProxy(),
+                        proxies=self.proxies.random(),
                     )
                     if r.status_code != HTTPStatus.OK.value:
                         # password is probably invalid
@@ -526,7 +510,7 @@ class PlaceClient:
                     data_str = (
                         BeautifulSoup(r.content, features="html.parser")
                         .find("script", {"id": "data"})
-                        .contents[0][len("window.__r = ") : -1]
+                        .contents[0][len("window.__r = "): -1]
                     )
                     data = json.loads(data_str)
                     response_data = data["user"]["session"]
@@ -557,8 +541,8 @@ class PlaceClient:
 
                 # draw pixel onto screen
                 if self.access_tokens.get(index) is not None and (
-                    current_timestamp >= next_pixel_placement_time
-                    or self.first_run_counter <= index
+                    current_timestamp >= next_pixel_placement_time or
+                    self.first_run_counter <= index
                 ):
 
                     # place pixel immediately
