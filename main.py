@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 
 
 from src.mappings import ColorMapper
-from src.utils import Proxies
+from src.utils import ProxyManager
 
 
 class PlaceClient:
@@ -41,7 +41,7 @@ class PlaceClient:
             self.json_data["unverified_place_frequency"] is not None
             else False
         )
-        self.proxies = Proxies(self.json_data.get("proxies", []))
+        self.proxies = ProxyManager(self.json_data.get("proxies", []))
         self.compactlogging = (
             self.json_data["compact_logging"]
             if "compact_logging" in self.json_data and
