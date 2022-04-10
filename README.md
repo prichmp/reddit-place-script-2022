@@ -1,92 +1,150 @@
 # Reddit Place Script 2022
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/60-percent-of-the-time-works-every-time.svg)](https://forthebadge.com)
+
 ## About
 
-Script to draw an image onto r/place (https://www.reddit.com/r/place/)
+This is a script to draw an image onto r/place (<https://www.reddit.com/r/place/>).
+
+## Features
+
+- Support for multiple accounts
+- Determines the cooldown time remaining for each account
+- Detects existing matching pixels on the r/place map and skips them
+- Automatically converts colors to the r/place color palette
+- Easy(ish) to read output with colors
+- SOCKS proxy support
+- No client id and secret needed
 
 ## Requirements
 
-Python 3 (https://www.python.org/downloads/)
+- [Latest Version of Python 3](https://www.python.org/downloads/)
 
-## How to Get App Client ID and App Secret Key
+## MacOSX
+If you are using MacOSX and encounter an SSL_CERTIFICATE error. Please apply the fix detailed https://stackoverflow.com/questions/42098126/mac-osx-python-ssl-sslerror-ssl-certificate-verify-failed-certificate-verify  
 
-You need to generate an app client id and app secret key in order to use this script.
-
-Steps:
-
-1. Visit https://www.reddit.com/prefs/apps
-2. Click "create (another) app" button at very bottom 
-3. Select the "script" option and fill in the fields with anything
-
-## Python Package Requirements
-
-Install requirements from 'requirements.txt' file.
-
-```shell
-pip3 install -r requirements.txt
-```
 
 ## Get Started
 
-Create a file called '.env'
+Move the file 'config_example.json' to config.json
 
-Put in the following content:
+Edit the values to replace with actual credentials and values
 
-```text
-ENV_PLACE_USERNAME='["developer_username"]'
-ENV_PLACE_PASSWORD='["developer_password"]'
-ENV_PLACE_APP_CLIENT_ID='["app_client_id"]'
-ENV_PLACE_SECRET_KEY='["app_secret_key"]'
-ENV_DRAW_X_START="x_position_start_integer"
-ENV_DRAW_Y_START="y_position_start_integer"
-ENV_R_START='["0"]'
-ENV_C_START='["0"]'
+Note: Please use https://jsonlint.com/ to check that your JSON file is correctly formatted
+
+```json
+{
+  //Where the image's path is
+  "image_path":"image.png",
+  // [x,y] where you want the top left pixel of the local image to be drawn on canvas
+  "image_start_coords": [741, 610],
+  // delay between starting threads (can be 0)
+  "thread_delay": 2,
+  // array of accounts to use
+  "workers": {
+    // username of account 1
+    "worker1username": {
+      // password of account 1
+      "password": "password",
+      // which pixel of the image to draw first
+      "start_coords": [0, 0]
+    },
+    // username of account 2
+    "worker1username": {
+      // password of account 2
+      "password": "password",
+      // which pixel of the image to draw first
+      "start_coords": [0, 0]
+    }
+    // etc... add as many accounts as you want (but reddit may detect you the more you add)
+  }
+}
 ```
 
-- ENV_PLACE_USERNAME is the username of the developer account
-- ENV_PLACE_PASSWORD is the password of the developer account
-- ENV_PLACE_APP_CLIENT_ID is the client id for the app / script registered with Reddit
-- ENV_PLACE_SECRET_KEY is the secret key for the app / script registered with Reddit
-- ENV_DRAW_X_START specifies the x position to draw the image on the r/place canvas
-- ENV_DRAW_Y_START specifies the y position to draw the image on the r/place canvas
-- ENV_R_START specifies which x position of the original image to start at while drawing it
-- ENV_C_START specifies which y position of the original image to start at while drawing it
+### Notes
 
-
-Note: Multiple fields can be passed into the arrays to spawn a thread for each one.
-
-Change image.jpg to specify what image to draw. One pixel is drawn every 5 minutes and only jpeg images are supported.
+- Change image.jpg/png to specify what image to draw. One pixel is drawn every 5 minutes. PNG takes priority over JPG.
 
 ## Run the Script
 
+### Windows
+
+```shell
+start.bat or startverbose.bat
 ```
-python3 main.py
+
+### Other OS
+
+```shell
+chmod +x start.sh startverbose.sh
+./start.sh or ./startverbose.sh
 ```
+
+### You can get more logs (`DEBUG`) by running the script with `-d` flag
+
+`python3 main.py -d` or `python3 main.py --debug`
 
 ## Multiple Workers
 
-If you want two threads drawing the image at once you could have a setup like this:
+Just create multiple child arrays to "workers" in the .json
 
-```text
-ENV_PLACE_USERNAME='["developer_username_1", "developer_username_2"]'
-ENV_PLACE_PASSWORD='["developer_password_1", "developer_password_2"]'
-ENV_PLACE_APP_CLIENT_ID='["app_client_id_1", "app_client_id_2"]'
-ENV_PLACE_SECRET_KEY='["app_secret_key_1", "app_secret_key_2"]'
-ENV_DRAW_X_START="x_position_start_integer"
-ENV_DRAW_Y_START="y_position_start_integer"
-ENV_R_START='["0", "0"]'
-ENV_C_START='["0", "50"]'
+```json
+{
+  "image_path":"image.png",
+  "image_start_coords": [741, 610],
+  "thread_delay": 2,
+
+  "workers": {
+    "worker1username": {
+      "password": "password",
+      "start_coords": [0, 0]
+    },
+    "worker2username": {
+      "password": "password",
+      "start_coords": [0, 50]
+    }
+  }
+}
 ```
 
-The same pattern can be used for 3 or more threads drawing at once. Note that the "ENV_PLACE_USERNAME", "ENV_PLACE_PASSWORD", "ENV_PLACE_APP_CLIENT_ID", "ENV_PLACE_SECRET_KEY", "ENV_R_START", and "ENV_C_START" variables should all be string arrays of the same size.
+In this case, the first worker will start drawing from (0, 0) and the second worker will start drawing from (0, 50) from the input image.jpg file.
 
-Also note that I did the following in the above example:
+This is useful if you want different threads drawing different parts of the image with different accounts.
+
+## Other Settings
+
+If any JSON decoders errors are found, the `config.json` needs a fix. Make sure to add the below 2 lines in the file.
 
 ```text
-ENV_R_START='["0", "0"]'
-ENV_C_START='["0", "50"]'
+{
+    "thread_delay": 2,
+    "unverified_place_frequency": false,
+    "proxies": ["1.1.1.1:8080","2.2.2.2:1234"],
+    "compact_logging": true
+}
 ```
 
-In this case, the first worker will start drawing from (0, 0) and the second worker will start drawing from (0, 50) from the input image.jpg file. 
+- thread_delay - Adds a delay between starting a new thread. Can be used to avoid ratelimiting
+- unverified_place_frequency - Sets the pixel place frequency to the unverified account limit
+- proxies - Sets proxies to use for sending requests to reddit. The proxy used is randomly selected for each request. Can be used to avoid ratelimiting
+- compact_logging - Disables timer text until next pixel
 
-This is useful if you want different threads drawing different parts of the image with different accounts. 
+- Transparency can be achieved by using the RGB value (69, 42, 0) in any part of your image
+- If you'd like, you can enable Verbose Mode by adding --verbose to "python main.py". This will output a lot more information, and not neccessarily in the right order, but it is useful for development and debugging.
+
+## Docker
+
+A dockerfile is provided. Instructions on installing docker are outside the scope of this guide.
+
+To build: After editing your config.json, run `docker build . -t place-bot`. and wait for the image to build
+
+You can now run with 
+
+`docker run place-bot`
+
+
+## Contributing
+
+See the [Contributing Guide](docs/CONTRIBUTING.md)
