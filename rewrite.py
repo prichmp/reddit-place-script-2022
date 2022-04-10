@@ -226,7 +226,7 @@ if __name__ == "__main__":
 
     # note: reddit limits us to place 1 pixel every 5 minutes, so I am setting it to
     # 5 minutes and 5 seconds per pixel
-    pixel_place_frequency = 305
+    pixel_place_frequency = 310
     last_time_placed_pixel = math.floor(time.time()) - pixel_place_frequency
 
 
